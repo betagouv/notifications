@@ -1,0 +1,6 @@
+[submodule "api"]
+	path = api
+	url = git@github.com:betagouv/notification-api.git
+[submodule "admin"]
+	path = admin
+	url = git@github.com:betagouv/notification-admin.git

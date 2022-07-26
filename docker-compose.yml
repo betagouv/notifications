@@ -1,0 +1,129 @@
+version: '3'
+
+services:
+  db:
+    image: postgres:11.2
+    volumes:
+      - ./api/local/initdb:/docker-entrypoint-initdb.d
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: chummy
+    ports:
+      - "5432:5432"
+    expose:
+      - "5432"
+    command:
+      - "postgres"
+      - "-c"
+      - "listen_addresses=*"
+    restart: always
+  redis:
+    image: redis:latest
+  api:
+    image: notification-api
+    restart: always
+    build:
+      context: api
+      dockerfile: local/Dockerfile
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - SQLALCHEMY_DATABASE_URI=postgresql://postgres:chummy@db:5432/notification_api
+    entrypoint: /app/local/scripts/notify-web-entrypoint.sh
+    command: >
+      bash -c "make generate-version-file && make run"
+    volumes:
+      - ./api/:/app
+    ports:
+        - "6011:6011"
+    depends_on:
+      - db
+      - redis
+  admin:
+    restart: on-failure
+    image: notification-admin
+    build:
+      context: admin
+      dockerfile: ci/Dockerfile
+    environment:
+      - GIT_COMMIT=${API_COMMIT}
+    command: >
+      bash -c "
+        make babel &&
+        npm install &&
+        npm run build &&
+        flask run -p 6012 --host=0.0.0.0"
+    volumes:
+      - ./admin/:/app
+    ports:
+        - "6012:6012"
+  # beat:
+  #   image: notification-api
+  #   restart: on-failure
+  #   build:
+  #     context: api
+  #     dockerfile: api/local/Dockerfile
+  #   environment:
+  #     - REDIS_URL=redis://redis:6379/0
+  #     - SQLALCHEMY_DATABASE_URI=postgresql://postgres:chummy@db:5432/notification_api
+  #   entrypoint: /app/local/scripts/notify-worker-entrypoint.sh
+  #   command: >
+  #     bash -c "sh scripts/run_celery_beat.sh"
+  #   volumes:
+  #     - ./api/:/app
+  #   depends_on:
+  #     - db
+  #     - redis
+  #     - web
+  # worker:
+  #   image: notification-api
+  #   restart: on-failure
+  #   build:
+  #     context: api
+  #     dockerfile: api/local/Dockerfile
+  #   environment:
+  #     - REDIS_URL=redis://redis:6379/0
+  #     - SQLALCHEMY_DATABASE_URI=postgresql://postgres:chummy@db:5432/notification_api
+  #   entrypoint: /app/local/scripts/notify-worker-entrypoint.sh
+  #   command: >
+  #     bash -c "[[ -f /tmp/celery.pid ]] && rm /tmp/celery.pid; sh /app/scripts/run_celery.sh"
+  #   volumes:
+  #     - ./api/:/app
+  #   depends_on:
+  #     - db
+  #     - redis
+  #     - web
+  # worker_sms:
+  #   image: notification-api
+  #   restart: on-failure
+  #   build:
+  #     context: api
+  #     dockerfile: api/local/Dockerfile
+  #   environment:
+  #     - REDIS_URL=redis://redis:6379/0
+  #     - SQLALCHEMY_DATABASE_URI=postgresql://postgres:chummy@db:5432/notification_api
+  #   entrypoint: /app/local/scripts/notify-worker-entrypoint.sh
+  #   command: >
+  #     bash -c "sh /app/scripts/run_celery_sms.sh"
+  #   volumes:
+  #     - ./api/:/app
+  #   depends_on:
+  #     - db
+  #     - redis
+  #     - web
+  # tests:
+  #   image: notification-api-tests
+  #   restart: "no"
+  #   build:
+  #     context: api
+  #     dockerfile: ci/Dockerfile.test
+  #   environment:
+  #     - REDIS_URL=redis://redis:6379/1
+  #     - SQLALCHEMY_DATABASE_URI=postgresql://postgres:chummy@db:5432/test_notification_api
+  #     - SQLALCHEMY_DATABASE_READER_URI=postgresql://reader:chummy@db:5432/test_notification_api
+  #   entrypoint: ./api/local/scripts/notify-worker-entrypoint.sh
+  #   command: >
+  #     bash -c "/app/scripts/run_tests.sh"
+  #   volumes:
+  #     - ./api/:/app
+  #   depends_on:
+  #     - db
