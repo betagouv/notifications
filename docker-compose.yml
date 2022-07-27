@@ -56,74 +56,74 @@ services:
       - ./admin/:/app
     ports:
         - "6012:6012"
-  # beat:
-  #   image: notification-api
-  #   restart: on-failure
-  #   build:
-  #     context: api
-  #     dockerfile: api/local/Dockerfile
-  #   environment:
-  #     - REDIS_URL=redis://redis:6379/0
-  #     - SQLALCHEMY_DATABASE_URI=postgresql://postgres:chummy@db:5432/notification_api
-  #   entrypoint: /app/local/scripts/notify-worker-entrypoint.sh
-  #   command: >
-  #     bash -c "sh scripts/run_celery_beat.sh"
-  #   volumes:
-  #     - ./api/:/app
-  #   depends_on:
-  #     - db
-  #     - redis
-  #     - web
-  # worker:
-  #   image: notification-api
-  #   restart: on-failure
-  #   build:
-  #     context: api
-  #     dockerfile: api/local/Dockerfile
-  #   environment:
-  #     - REDIS_URL=redis://redis:6379/0
-  #     - SQLALCHEMY_DATABASE_URI=postgresql://postgres:chummy@db:5432/notification_api
-  #   entrypoint: /app/local/scripts/notify-worker-entrypoint.sh
-  #   command: >
-  #     bash -c "[[ -f /tmp/celery.pid ]] && rm /tmp/celery.pid; sh /app/scripts/run_celery.sh"
-  #   volumes:
-  #     - ./api/:/app
-  #   depends_on:
-  #     - db
-  #     - redis
-  #     - web
-  # worker_sms:
-  #   image: notification-api
-  #   restart: on-failure
-  #   build:
-  #     context: api
-  #     dockerfile: api/local/Dockerfile
-  #   environment:
-  #     - REDIS_URL=redis://redis:6379/0
-  #     - SQLALCHEMY_DATABASE_URI=postgresql://postgres:chummy@db:5432/notification_api
-  #   entrypoint: /app/local/scripts/notify-worker-entrypoint.sh
-  #   command: >
-  #     bash -c "sh /app/scripts/run_celery_sms.sh"
-  #   volumes:
-  #     - ./api/:/app
-  #   depends_on:
-  #     - db
-  #     - redis
-  #     - web
-  # tests:
-  #   image: notification-api-tests
-  #   restart: "no"
-  #   build:
-  #     context: api
-  #     dockerfile: ci/Dockerfile.test
-  #   environment:
-  #     - REDIS_URL=redis://redis:6379/1
-  #     - SQLALCHEMY_DATABASE_URI=postgresql://postgres:chummy@db:5432/test_notification_api
-  #     - SQLALCHEMY_DATABASE_READER_URI=postgresql://reader:chummy@db:5432/test_notification_api
-  #   entrypoint: ./api/local/scripts/notify-worker-entrypoint.sh
-  #   command: >
-  #     bash -c "/app/scripts/run_tests.sh"
-  #   volumes:
-  #     - ./api/:/app
-  #   depends_on:
-  #     - db
+  beat:
+    image: notification-api
+    restart: on-failure
+    build:
+      context: api
+      dockerfile: api/local/Dockerfile
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - SQLALCHEMY_DATABASE_URI=postgresql://postgres:chummy@db:5432/notification_api
+    entrypoint: /app/local/scripts/notify-worker-entrypoint.sh
+    command: >
+      bash -c "sh scripts/run_celery_beat.sh"
+    volumes:
+      - ./api/:/app
+    depends_on:
+      - db
+      - redis
+      - api
+  worker:
+    image: notification-api
+    restart: on-failure
+    build:
+      context: api
+      dockerfile: api/local/Dockerfile
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - SQLALCHEMY_DATABASE_URI=postgresql://postgres:chummy@db:5432/notification_api
+    entrypoint: /app/local/scripts/notify-worker-entrypoint.sh
+    command: >
+      bash -c "[[ -f /tmp/celery.pid ]] && rm /tmp/celery.pid; sh /app/scripts/run_celery.sh"
+    volumes:
+      - ./api/:/app
+    depends_on:
+      - db
+      - redis
+      - api
+  worker_sms:
+    image: notification-api
+    restart: on-failure
+    build:
+      context: api
+      dockerfile: api/local/Dockerfile
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - SQLALCHEMY_DATABASE_URI=postgresql://postgres:chummy@db:5432/notification_api
+    entrypoint: /app/local/scripts/notify-worker-entrypoint.sh
+    command: >
+      bash -c "sh /app/scripts/run_celery_sms.sh"
+    volumes:
+      - ./api/:/app
+    depends_on:
+      - db
+      - redis
+      - api
+  tests:
+    image: notification-api-tests
+    restart: "no"
+    build:
+      context: api
+      dockerfile: ci/Dockerfile.test
+    environment:
+      - REDIS_URL=redis://redis:6379/1
+      - SQLALCHEMY_DATABASE_URI=postgresql://postgres:chummy@db:5432/test_notification_api
+      - SQLALCHEMY_DATABASE_READER_URI=postgresql://reader:chummy@db:5432/test_notification_api
+    entrypoint: /app/local/scripts/notify-worker-entrypoint.sh
+    command: >
+      bash -c "/app/scripts/run_tests.sh"
+    volumes:
+      - ./api/:/app
+    depends_on:
+      - db
