@@ -14,6 +14,17 @@ orchestrer leur lancement.
 
 ## Mise en route
 
+### Création des fichiers `.env`
+
+Les applications se servent de fichier `.env` qu'on peut initialiser
+en copiant le fichier exemple:
+
+```shell
+git submodules foreach cp .env.example .env
+```
+
+### Lancement des services
+
 ```shell
 make run
 ```
