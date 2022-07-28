@@ -28,6 +28,7 @@ services:
     environment:
       - REDIS_URL=redis://redis:6379/0
       - SQLALCHEMY_DATABASE_URI=postgresql://postgres:chummy@db:5432/notification_api
+      - GIT_COMMIT=${ADMIN_COMMIT}
     entrypoint: /app/local/scripts/notify-web-entrypoint.sh
     command: >
       bash -c "make generate-version-file && make run"
