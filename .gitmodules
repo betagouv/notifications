@@ -4,3 +4,6 @@
 [submodule "admin"]
 	path = admin
 	url = git@github.com:betagouv/notification-admin.git
+[submodule "utils"]
+	path = utils
+	url = git@github.com:betagouv/notification-utils.git
