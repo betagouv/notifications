@@ -24,16 +24,18 @@ services:
     restart: always
     build:
       context: api
-      dockerfile: local/Dockerfile
+      dockerfile: Dockerfile
+      args:
+        API_COMMIT: "${API_COMMIT}"
     environment:
       - REDIS_URL=redis://redis:6379/0
       - SQLALCHEMY_DATABASE_URI=postgresql://postgres:chummy@db:5432/notification_api
-      - GIT_COMMIT=${ADMIN_COMMIT}
+      - SQLALCHEMY_TEST_DATABASE_URI=postgresql://postgres:chummy@db:5432/test_notification_api
     entrypoint: /app/local/scripts/notify-web-entrypoint.sh
-    command: >
-      bash -c "make generate-version-file && make run"
+    command: make run
     volumes:
       - ./api/:/app
+      - /var/run/docker.sock:/var/run/docker.sock
     ports:
         - "6011:6011"
     depends_on:
@@ -44,15 +46,10 @@ services:
     image: notification-admin
     build:
       context: admin
-      dockerfile: ci/Dockerfile
-    environment:
-      - GIT_COMMIT=${API_COMMIT}
-    command: >
-      bash -c "
-        make babel &&
-        npm install &&
-        npm run build &&
-        flask run -p 6012 --host=0.0.0.0"
+      dockerfile: Dockerfile
+      args:
+        - GIT_SHA="${ADMIN_COMMIT}"
+    command: make run-dev
     volumes:
       - ./admin/:/app
     ports:
@@ -60,9 +57,6 @@ services:
   beat:
     image: notification-api
     restart: on-failure
-    build:
-      context: api
-      dockerfile: api/local/Dockerfile
     environment:
       - REDIS_URL=redis://redis:6379/0
       - SQLALCHEMY_DATABASE_URI=postgresql://postgres:chummy@db:5432/notification_api
@@ -78,9 +72,6 @@ services:
   worker:
     image: notification-api
     restart: on-failure
-    build:
-      context: api
-      dockerfile: api/local/Dockerfile
     environment:
       - REDIS_URL=redis://redis:6379/0
       - SQLALCHEMY_DATABASE_URI=postgresql://postgres:chummy@db:5432/notification_api
@@ -96,9 +87,6 @@ services:
   worker_sms:
     image: notification-api
     restart: on-failure
-    build:
-      context: api
-      dockerfile: api/local/Dockerfile
     environment:
       - REDIS_URL=redis://redis:6379/0
       - SQLALCHEMY_DATABASE_URI=postgresql://postgres:chummy@db:5432/notification_api
@@ -111,20 +99,3 @@ services:
       - db
       - redis
       - api
-  tests:
-    image: notification-api-tests
-    restart: "no"
-    build:
-      context: api
-      dockerfile: ci/Dockerfile.test
-    environment:
-      - REDIS_URL=redis://redis:6379/1
-      - SQLALCHEMY_DATABASE_URI=postgresql://postgres:chummy@db:5432/test_notification_api
-      - SQLALCHEMY_DATABASE_READER_URI=postgresql://reader:chummy@db:5432/test_notification_api
-    entrypoint: /app/local/scripts/notify-worker-entrypoint.sh
-    command: >
-      bash -c "/app/scripts/run_tests.sh"
-    volumes:
-      - ./api/:/app
-    depends_on:
-      - db
