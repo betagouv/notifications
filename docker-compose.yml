@@ -48,7 +48,7 @@ services:
       context: admin
       dockerfile: Dockerfile
       args:
-        - GIT_SHA="${ADMIN_COMMIT}"
+        - ADMIN_COMMIT="${ADMIN_COMMIT}"
     command: make run-dev
     volumes:
       - ./admin/:/app
