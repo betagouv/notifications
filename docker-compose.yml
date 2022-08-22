@@ -44,6 +44,8 @@ services:
   admin:
     restart: on-failure
     image: notification-admin
+    environment:
+      - REDIS_URL=redis://redis:6379/0
     build:
       context: admin
       dockerfile: Dockerfile
