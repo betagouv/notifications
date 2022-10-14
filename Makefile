@@ -17,3 +17,9 @@ admin-prompt:
 
 db-prompt:
 	docker-compose exec -u postgres db psql notification_api
+
+admin-logs:
+	docker-compose logs --since=1m --follow admin
+
+admin-assets:
+	docker-compose exec admin npm run watch

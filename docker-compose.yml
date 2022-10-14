@@ -31,8 +31,7 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - SQLALCHEMY_DATABASE_URI=postgresql://postgres:chummy@db:5432/notification_api
       - SQLALCHEMY_TEST_DATABASE_URI=postgresql://postgres:chummy@db:5432/test_notification_api
-    entrypoint: /app/local/scripts/notify-web-entrypoint.sh
-    command: make run
+    command: make run-dev
     volumes:
       - ./api/:/app
       - /var/run/docker.sock:/var/run/docker.sock
@@ -42,6 +41,8 @@ services:
       - db
       - redis
   admin:
+    stdin_open: true
+    tty: true
     restart: on-failure
     image: notification-admin
     environment:
@@ -54,6 +55,7 @@ services:
     command: make run-dev
     volumes:
       - ./admin/:/app
+      - ./utils/:/app/utils
     ports:
         - "6012:6012"
   beat:
@@ -62,9 +64,7 @@ services:
     environment:
       - REDIS_URL=redis://redis:6379/0
       - SQLALCHEMY_DATABASE_URI=postgresql://postgres:chummy@db:5432/notification_api
-    entrypoint: /app/local/scripts/notify-worker-entrypoint.sh
-    command: >
-      bash -c "sh scripts/run_celery_beat.sh"
+    command: make run-celery-beat
     volumes:
       - ./api/:/app
     depends_on:
@@ -77,24 +77,7 @@ services:
     environment:
       - REDIS_URL=redis://redis:6379/0
       - SQLALCHEMY_DATABASE_URI=postgresql://postgres:chummy@db:5432/notification_api
-    entrypoint: /app/local/scripts/notify-worker-entrypoint.sh
-    command: >
-      bash -c "[[ -f /tmp/celery.pid ]] && rm /tmp/celery.pid; sh /app/scripts/run_celery.sh"
-    volumes:
-      - ./api/:/app
-    depends_on:
-      - db
-      - redis
-      - api
-  worker_sms:
-    image: notification-api
-    restart: on-failure
-    environment:
-      - REDIS_URL=redis://redis:6379/0
-      - SQLALCHEMY_DATABASE_URI=postgresql://postgres:chummy@db:5432/notification_api
-    entrypoint: /app/local/scripts/notify-worker-entrypoint.sh
-    command: >
-      bash -c "sh /app/scripts/run_celery_sms.sh"
+    command: make run-celery
     volumes:
       - ./api/:/app
     depends_on:
